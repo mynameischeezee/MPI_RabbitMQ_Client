@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "zbS7idDYTm9qngishTK/M4nQrjPPpGk8kFCO3IJy3zAD5bTATiTtyItsk34fqp3rJJTRdu/Xl3ZkTsWt+iCNQA==",
+  "success": true,
+  "projectFilePath": "C:\\Users\\Hexi\\RiderProjects\\Lab8Client\\Lab8Client\\Lab8Client.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Hexi\\.nuget\\packages\\rabbitmq.client\\6.2.2\\rabbitmq.client.6.2.2.nupkg.sha512",
+    "C:\\Users\\Hexi\\.nuget\\packages\\system.memory\\4.5.4\\system.memory.4.5.4.nupkg.sha512",
+    "C:\\Users\\Hexi\\.nuget\\packages\\system.threading.channels\\4.7.1\\system.threading.channels.4.7.1.nupkg.sha512"
+  ],
+  "logs": []
+}
