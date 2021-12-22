@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -9,11 +10,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Lab8Client.Models;
 using RabbitMQ.Client;
+using RabbitMQ.Client.Events;
 
 namespace Lab8Client.Controllers
 {
     public class HomeController : Controller
     {
+        private DateTime startTime = DateTime.Now;
         private readonly ILogger<HomeController> _logger;
 
         public HomeController(ILogger<HomeController> logger)
@@ -24,6 +27,43 @@ namespace Lab8Client.Controllers
         public IActionResult Index()
         {
             return View();
+        }
+
+        public void Recieve()
+        {
+            var factory = new ConnectionFactory() { HostName = "localhost" };  
+            string queueName = "returned_result";  
+            var rabbitMqConnection = factory.CreateConnection();  
+            var rabbitMqChannel = rabbitMqConnection.CreateModel();  
+  
+            rabbitMqChannel.QueueDeclare(queue: queueName,  
+                durable: false,  
+                exclusive: false,  
+                autoDelete: false,  
+                arguments: null);  
+  
+            rabbitMqChannel.BasicQos(prefetchSize: 0, prefetchCount: 1, global: false);  
+  
+            int messageCount = Convert.ToInt16(rabbitMqChannel.MessageCount(queueName));  
+            Console.WriteLine(" Listening to the queue. This channels has {0} messages on the queue", messageCount);  
+  
+            var consumer = new EventingBasicConsumer(rabbitMqChannel);  
+            consumer.Received += (model, ea) =>  
+            {  
+                var body = ea.Body;  
+                var message = System.Text.Encoding.UTF8.GetString(body.ToArray());  
+                TimeSpan span= DateTime.Now.Subtract(startTime);
+                _logger.LogInformation("[!] Time to execute: " + span.TotalSeconds.ToString(CultureInfo.InvariantCulture));
+                //_logger.LogInformation(" [+] Delivered Message. {0}",message);
+                rabbitMqChannel.BasicAck(deliveryTag: ea.DeliveryTag, multiple: false);
+                Thread.Sleep(1000);  
+            };  
+            rabbitMqChannel.BasicConsume(queue: queueName,  
+                autoAck: false,  
+                consumer: consumer);  
+  
+            Thread.Sleep(1000 * messageCount);  
+            _logger.LogInformation(" [x] Closed.");
         }
 
         private string GeneratedMatrix(int dimension)
@@ -45,6 +85,7 @@ namespace Lab8Client.Controllers
         [HttpPost]
         public IActionResult Send(string Dimension, bool IsDataOnServer, string CountOfProcess)
         {
+            
             var factory = new ConnectionFactory() {HostName = "localhost"};
             using var connection = factory.CreateConnection();
             using var dimensionChannel = connection.CreateModel();
@@ -121,7 +162,8 @@ namespace Lab8Client.Controllers
                 routingKey: "count_of_process",
                 basicProperties: null,
                 body: countOfProcessBody);
-            
+            _logger.LogInformation(" [x] Sent.");
+            Recieve();
             return View("Index");
         }
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
