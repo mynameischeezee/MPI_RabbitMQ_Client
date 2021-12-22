@@ -4,5 +4,6 @@
     {
         public string Dimension { get; set; }
         public bool IsDataOnServer { get; set; }
+        public string CountOfProcess { get; set; }
     }
 }

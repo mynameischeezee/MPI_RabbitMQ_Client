@@ -43,19 +43,21 @@ namespace Lab8Client.Controllers
         }
 
         [HttpPost]
-        public IActionResult Send(string Dimension, bool IsDataOnServer)
+        public IActionResult Send(string Dimension, bool IsDataOnServer, string CountOfProcess)
         {
             var factory = new ConnectionFactory() {HostName = "localhost"};
             using var connection = factory.CreateConnection();
             using var dimensionChannel = connection.CreateModel();
+            using var countOfProcessChannel = connection.CreateModel();
             using var matrixAChannel = connection.CreateModel();
             using var matrixBChannel = connection.CreateModel();
             using var isDataOnServerChannel = connection.CreateModel();
-            
+
             byte[] matrixABody = Array.Empty<byte>();
             byte[] matrixBBody = Array.Empty<byte>();
 
             int matrixDimension;
+
             if (IsDataOnServer)
             {
                 int.TryParse(Dimension, out matrixDimension);
@@ -72,6 +74,7 @@ namespace Lab8Client.Controllers
             }
             var matrixDimensionBody = Encoding.UTF8.GetBytes(Convert.ToString(matrixDimension));
             var isDataOnServerBody = Encoding.UTF8.GetBytes(Convert.ToString(IsDataOnServer));
+            var countOfProcessBody = Encoding.UTF8.GetBytes(Convert.ToString(CountOfProcess));
             dimensionChannel.QueueDeclare(queue: "matrix_dimension_queue",
                 durable: false,
                 exclusive: false,
@@ -88,6 +91,11 @@ namespace Lab8Client.Controllers
                 autoDelete: false,
                 arguments: null);
             matrixBChannel.QueueDeclare(queue: "is_data_on_server_channel",
+                durable: false,
+                exclusive: false,
+                autoDelete: false,
+                arguments: null);
+            matrixBChannel.QueueDeclare(queue: "count_of_process",
                 durable: false,
                 exclusive: false,
                 autoDelete: false,
@@ -109,6 +117,10 @@ namespace Lab8Client.Controllers
                 routingKey: "is_data_on_server_channel",
                 basicProperties: null,
                 body: isDataOnServerBody);
+            matrixBChannel.BasicPublish(exchange: "",
+                routingKey: "count_of_process",
+                basicProperties: null,
+                body: countOfProcessBody);
             
             return View("Index");
         }
